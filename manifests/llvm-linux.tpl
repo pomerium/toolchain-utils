@@ -1,5 +1,12 @@
 {prefix}/bin/clang
 {prefix}/bin/clang-{version_major}
+{prefix}/bin/clang-apply-replacements
+{prefix}/bin/clang-cpp
+{prefix}/bin/clang-format
+{prefix}/bin/clang-tidy
+{prefix}/bin/clang++
+{prefix}/bin/clangd
+{prefix}/bin/git-clang-format
 {prefix}/bin/ld.lld
 {prefix}/bin/ld64.lld
 {prefix}/bin/lld
