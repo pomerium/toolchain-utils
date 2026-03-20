@@ -36,6 +36,43 @@ RUN mv /llvm-${LLVM_VERSION}-minimal-linux-${TARGETARCH} /toolchain
 RUN mkdir -p /toolchain/lib64/clang/$(/toolchain/bin/clang -dumpversion | cut -d'.' -f1)/include \
  && mkdir -p /toolchain/lib64/clang/$(/toolchain/bin/clang -dumpversion)/include
 
+# In normal circumstances, toolchains_llvm will link files listed in the libclang_rt
+# and cxx_cross_libs attributes into the toolchain root. It does not do this when
+# overriding the toolchain root, so we need to copy the files ourselves
+
+ADD --unpack=true https://github.com/${REPOSITORY}/releases/download/${LLVM_VERSION}-${RELEASE_REVISION}/cxx-cross-libs-${LLVM_VERSION}-linux-arm64.tar.zst /tmp
+ADD --unpack=true https://github.com/${REPOSITORY}/releases/download/${LLVM_VERSION}-${RELEASE_REVISION}/cxx-cross-libs-${LLVM_VERSION}-macos-arm64.tar.zst /tmp
+
+# we should end up with a directory structure like this:
+# /toolchain
+#   /lib
+#      /x86_64-unknown-linux-gnu/{everything for x86_64}
+#      /aarch64-unknown-linux-gnu/{libc++.a,libc++abi.a,libunwind.a}
+#      /aarch64-apple-macosx/{libc++.a,libc++abi.a,libunwind.a}
+#      /clang/##/lib
+#         /x86_64-unknown-linux-gnu/{everything for x86_64}
+#         /aarch64-unknown-linux-gnu/{libclang_rt.builtins.a,clang_rt.crtbegin.o,clang_rt.crtend.o}
+#         /aarch64-apple-macosx/{libclang_rt.osx.a}
+#   /include
+#      /c++/v1/{everything for x86_64}
+#      /x86_64-unknown-linux-gnu/c++/v1/__config_site
+#      /aarch64-unknown-linux-gnu/c++/v1/__config_site
+#      /aarch64-apple-macosx/c++/v1/__config_site
+
+RUN export CLANG_VERSION_MAJOR="$(/toolchain/bin/clang -dumpversion | cut -d'.' -f1)"; \
+    mkdir -p /toolchain/include/aarch64-unknown-linux-gnu/c++/v1 \
+ && cp /tmp/cxx-cross-libs-${LLVM_VERSION}-linux-arm64/include/aarch64-unknown-linux-gnu/c++/v1/* /toolchain/include/aarch64-unknown-linux-gnu/c++/v1/ \
+ && mkdir -p /toolchain/lib/clang/${CLANG_VERSION_MAJOR}/lib/aarch64-unknown-linux-gnu \
+ && cp /tmp/cxx-cross-libs-${LLVM_VERSION}-linux-arm64/lib/clang/${CLANG_VERSION_MAJOR}/lib/aarch64-unknown-linux-gnu/* /toolchain/lib/clang/${CLANG_VERSION_MAJOR}/lib/aarch64-unknown-linux-gnu/ \
+ && mkdir -p /toolchain/lib/aarch64-unknown-linux-gnu \
+ && cp /tmp/cxx-cross-libs-${LLVM_VERSION}-linux-arm64/lib/aarch64-unknown-linux-gnu/*.a /toolchain/lib/aarch64-unknown-linux-gnu/ \
+ && mkdir -p /toolchain/include/aarch64-apple-macosx/c++/v1 \
+ && cp /tmp/cxx-cross-libs-${LLVM_VERSION}-macos-arm64/include/c++/v1/* /toolchain/include/aarch64-apple-macosx/c++/v1/ \
+ && mkdir -p /toolchain/lib/clang/${CLANG_VERSION_MAJOR}/lib/aarch64-apple-macosx \
+ && cp /tmp/cxx-cross-libs-${LLVM_VERSION}-macos-arm64/lib/clang/${CLANG_VERSION_MAJOR}/lib/darwin/* /toolchain/lib/clang/${CLANG_VERSION_MAJOR}/lib/aarch64-apple-macosx/ \
+ && mkdir -p /toolchain/lib/aarch64-apple-macosx \
+ && cp /tmp/cxx-cross-libs-${LLVM_VERSION}-macos-arm64/lib/*.a /toolchain/lib/aarch64-apple-macosx/
+
 FROM base
 
 COPY --from=toolchain-setup /toolchain /toolchain
