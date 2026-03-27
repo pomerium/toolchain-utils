@@ -22,7 +22,7 @@ docker buildx build -f "${SCRIPT_DIR}/sysroot.dockerfile" \
 /bin/mv "sysroot-linux-arm64.tar.zst" ..
 
 
-prefix="Payload/Library/Developer/CommandLineTools/SDKs/MacOSX26.2.sdk"; readonly prefix
+prefix="Payload/Library/Developer/CommandLineTools/SDKs/MacOSX15.5.sdk"; readonly prefix
 /bin/wget https://github.com/cerisier/pkgutil/releases/download/v1.2.0/pkgutil_linux_amd64
 # obtained from https://swscan.apple.com/content/catalogs/others/index-15-14-13-12-10.16-10.15-10.14-10.13-10.12-10.11-10.10-10.9-mountainlion-lion-snowleopard-leopard.merged-1.sucatalog
 /bin/wget https://swcdn.apple.com/content/downloads/52/01/082-41241-A_0747ZN8FHV/dectd075r63pppkkzsb75qk61s0lfee22j/CLTools_macOSNMOS_SDK.pkg
