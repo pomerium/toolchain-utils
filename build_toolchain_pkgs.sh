@@ -1,6 +1,11 @@
 #!/bin/bash
 
-set -eE -u -o pipefail
+set -u
+
+function die() {
+  echo "$*" | tee .err
+  exit 1
+}
 
 readonly LLVM_VERSION
 
@@ -10,17 +15,19 @@ if [ -z "${LLVM_VERSION}" ]; then
 fi
 
 LLVM_VERSION_MAJOR="$(/bin/echo "${LLVM_VERSION}" | /bin/cut -d '.' -f 1)"; readonly LLVM_VERSION_MAJOR
+LLVM_VERSION_MINOR="$(/bin/echo "${LLVM_VERSION}" | /bin/cut -d '.' -f 2)"; readonly LLVM_VERSION_MINOR
+LLVM_VERSION_PATCH="$(/bin/echo "${LLVM_VERSION}" | /bin/cut -d '.' -f 3)"; readonly LLVM_VERSION_PATCH
 SCRIPT_DIR="$(realpath "$(dirname "$0")")"; readonly SCRIPT_DIR
 
-function download_extract() {
+function download_extract() (
   local os_arch="$1"
-  /bin/wget -q "https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVM_VERSION}/LLVM-${LLVM_VERSION}-${os_arch}.tar.xz"
-  /bin/wget -q "https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVM_VERSION}/LLVM-${LLVM_VERSION}-${os_arch}.tar.xz.sig"
-  /bin/gpg -q --verify "LLVM-${LLVM_VERSION}-${os_arch}.tar.xz.sig" "LLVM-${LLVM_VERSION}-${os_arch}.tar.xz"
-  /bin/unxz -T0 "LLVM-${LLVM_VERSION}-${os_arch}.tar.xz"
-}
+  /bin/wget -q "https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVM_VERSION}/LLVM-${LLVM_VERSION}-${os_arch}.tar.xz" || die "error downloading llvm tarball"
+  /bin/wget -q "https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVM_VERSION}/LLVM-${LLVM_VERSION}-${os_arch}.tar.xz.sig" || die "error downloading llvm tarball signature"
+  /bin/gpg -q --verify "LLVM-${LLVM_VERSION}-${os_arch}.tar.xz.sig" "LLVM-${LLVM_VERSION}-${os_arch}.tar.xz" || die "gpg verify failed"
+  /bin/unxz -T0 "LLVM-${LLVM_VERSION}-${os_arch}.tar.xz" || die "failed to extract llvm tarball"
+)
 
-function generate_manifest() {
+function generate_manifest() (
   local os_arch="$1"
   local triple="$2"
   local tpl_basename="$3"
@@ -31,18 +38,20 @@ function generate_manifest() {
     | /bin/sed -e "s/{triple}/${triple}/g" \
           -e "s/{prefix}/LLVM-${LLVM_VERSION}-${os_arch}/g" \
           -e "s/{version_major}/${LLVM_VERSION_MAJOR}/g" \
+          -e "s/{version_minor}/${LLVM_VERSION_MINOR}/g" \
+          -e "s/{version_patch}/${LLVM_VERSION_PATCH}/g" \
     > "${output}"
-}
+)
 
-function extract_from_manifest() {
+function extract_from_manifest() (
   local os_arch="$1"
   local manifest="$2"
   local src="$3"
-  /bin/tar -x  --files-from "${manifest}" -f "${src}"
-}
+  /bin/tar -x  --files-from "${manifest}" -f "${src}" || die "failed to extract files from manifest (os_arch=${os_arch}; manifest=${manifest}; src=${src})"
+)
 
 
-function build_archive() {
+function build_archive() (
   local os_arch="$1"
   local triple="$2"
   local tpl_basename="$3"
@@ -50,34 +59,38 @@ function build_archive() {
   local compression_level="${5:-10}"
   local temp; temp="$(/bin/mktemp -d -p .)"
 
-  pushd "${temp}"
+  pushd "${temp}" || exit 1
 
   generate_manifest "${os_arch}" "${triple}" "${tpl_basename}"
   extract_from_manifest "${os_arch}" "${tpl_basename}-${os_arch}.manifest.txt" "../srcs/LLVM-${LLVM_VERSION}-${os_arch}.tar"
-  mv "LLVM-${LLVM_VERSION}-${os_arch}" "${out_basename}"
+  /bin/mv "LLVM-${LLVM_VERSION}-${os_arch}" "${out_basename}"
   /bin/tar -cf "${out_basename}.tar" "${out_basename}"
   /bin/zstd -T0 --long -"${compression_level}" --rm "${out_basename}.tar"
   /bin/mv "${out_basename}.tar.zst" ..
 
-  popd
+  popd || exit 1
 
   /bin/rm -r "${temp}"
-}
+)
 
 mkdir srcs
-pushd srcs
-download_extract "Linux-X64" &
-download_extract "Linux-ARM64" &
-download_extract "macOS-ARM64" &
+pushd srcs || exit 1
+rm -f .err
+download_extract "Linux-X64" || die "download_extract failed (Linux-X64)" &
+download_extract "Linux-ARM64" || die "download_extract failed (Linux-ARM64)" &
+download_extract "macOS-ARM64" || die "download_extract failed (macOS-ARM64)" &
 wait
-popd
+[[ -f ".err" ]] && exit 1
+popd || exit 1
 
-build_archive "Linux-X64" "x86_64-unknown-linux-gnu" "llvm" "llvm-${LLVM_VERSION}-minimal-linux-amd64" &
-build_archive "Linux-ARM64" "aarch64-unknown-linux-gnu" "llvm" "llvm-${LLVM_VERSION}-minimal-linux-arm64" &
-build_archive "macOS-ARM64" "" "llvm" "llvm-${LLVM_VERSION}-minimal-macos-arm64" &
-build_archive "Linux-ARM64" "aarch64-unknown-linux-gnu" "cxx-cross-libs" "cxx-cross-libs-${LLVM_VERSION}-linux-arm64" "19" &
-build_archive "macOS-ARM64" "" "cxx-cross-libs" "cxx-cross-libs-${LLVM_VERSION}-macos-arm64" "19" &
+rm -f .err
+build_archive "Linux-X64" "x86_64-unknown-linux-gnu" "llvm" "llvm-${LLVM_VERSION}-minimal-linux-amd64" || die "build_archive failed (Linux-X64)" &
+build_archive "Linux-ARM64" "aarch64-unknown-linux-gnu" "llvm" "llvm-${LLVM_VERSION}-minimal-linux-arm64" || die "build_archive failed (Linux-ARM64)" &
+build_archive "macOS-ARM64" "" "llvm" "llvm-${LLVM_VERSION}-minimal-macos-arm64" || die "build_archive failed (macOS-ARM64)" &
+build_archive "Linux-ARM64" "aarch64-unknown-linux-gnu" "cxx-cross-libs" "cxx-cross-libs-${LLVM_VERSION}-linux-arm64" "19" || die "build_archive failed (Linux-ARM64)" &
+build_archive "macOS-ARM64" "" "cxx-cross-libs" "cxx-cross-libs-${LLVM_VERSION}-macos-arm64" "19" || die "build_archive failed (macOS-ARM64)" &
 wait
+[[ -f ".err" ]] && exit 1
 
 
 # some compression benchmarks for fun
