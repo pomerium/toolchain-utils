@@ -89,6 +89,8 @@ build_archive "Linux-ARM64" "aarch64-unknown-linux-gnu" "llvm" "llvm-${LLVM_VERS
 build_archive "macOS-ARM64" "" "llvm" "llvm-${LLVM_VERSION}-minimal-macos-arm64" || die "build_archive failed (macOS-ARM64)" &
 build_archive "Linux-ARM64" "aarch64-unknown-linux-gnu" "cxx-cross-libs" "cxx-cross-libs-${LLVM_VERSION}-linux-arm64" "19" || die "build_archive failed (Linux-ARM64)" &
 build_archive "macOS-ARM64" "" "cxx-cross-libs" "cxx-cross-libs-${LLVM_VERSION}-macos-arm64" "19" || die "build_archive failed (macOS-ARM64)" &
+build_archive "Linux-X64" "x86_64-unknown-linux-gnu" "llvm-extras" "llvm-extras-${LLVM_VERSION}-linux-amd64" || die "build_archive failed (Linux-X64)" &
+build_archive "Linux-ARM64" "aarch64-unknown-linux-gnu" "llvm-extras" "llvm-extras-${LLVM_VERSION}-linux-arm64" || die "build_archive failed (Linux-ARM64)" &
 wait
 [[ -f ".err" ]] && exit 1
 
