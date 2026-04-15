@@ -80,7 +80,7 @@ download_extract "Linux-X64" || die "download_extract failed (Linux-X64)" &
 download_extract "Linux-ARM64" || die "download_extract failed (Linux-ARM64)" &
 download_extract "macOS-ARM64" || die "download_extract failed (macOS-ARM64)" &
 wait
-[[ -f ".err" ]] && exit 1
+[[ ! -f ".err" ]] || exit 1
 popd || exit 1
 
 rm -f .err
@@ -92,7 +92,7 @@ build_archive "macOS-ARM64" "" "cxx-cross-libs" "cxx-cross-libs-${LLVM_VERSION}-
 build_archive "Linux-X64" "x86_64-unknown-linux-gnu" "llvm-extras" "llvm-extras-${LLVM_VERSION}-linux-amd64" || die "build_archive failed (Linux-X64)" &
 build_archive "Linux-ARM64" "aarch64-unknown-linux-gnu" "llvm-extras" "llvm-extras-${LLVM_VERSION}-linux-arm64" || die "build_archive failed (Linux-ARM64)" &
 wait
-[[ -f ".err" ]] && exit 1
+[[ ! -f ".err" ]] || exit 1
 
 
 # some compression benchmarks for fun
