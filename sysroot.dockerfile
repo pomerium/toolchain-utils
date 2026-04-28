@@ -1,4 +1,4 @@
-FROM debian:trixie AS build
+FROM ubuntu:22.04 AS build
 
 RUN apt update \
  && apt download libc-dev-bin libcrypt-dev linux-libc-dev rpcsvc-proto libc6-dev libc6 libxml2 \
