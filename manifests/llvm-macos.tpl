@@ -36,16 +36,12 @@
 {prefix}/lib/clang/
 {prefix}/lib/libc++.1.0.dylib
 {prefix}/lib/libc++.1.dylib
-{prefix}/lib/libc++.a
 {prefix}/lib/libc++.dylib
 {prefix}/lib/libc++.modules.json
 {prefix}/lib/libc++abi.1.0.dylib
 {prefix}/lib/libc++abi.1.dylib
-{prefix}/lib/libc++abi.a
 {prefix}/lib/libc++abi.dylib
-{prefix}/lib/libc++experimental.a
 {prefix}/lib/libomp.dylib
 {prefix}/lib/libunwind.1.0.dylib
 {prefix}/lib/libunwind.1.dylib
-{prefix}/lib/libunwind.a
 {prefix}/lib/libunwind.dylib
