@@ -16,11 +16,13 @@
 {prefix}/bin/llvm-cov
 {prefix}/bin/llvm-cxxfilt
 {prefix}/bin/llvm-dwp
+{prefix}/bin/llvm-install-name-tool
 {prefix}/bin/llvm-lib
 {prefix}/bin/llvm-libtool-darwin
 {prefix}/bin/llvm-nm
 {prefix}/bin/llvm-objcopy
 {prefix}/bin/llvm-objdump
+{prefix}/bin/llvm-otool
 {prefix}/bin/llvm-profdata
 {prefix}/bin/llvm-ranlib
 {prefix}/bin/llvm-readelf
