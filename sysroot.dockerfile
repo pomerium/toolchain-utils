@@ -1,7 +1,7 @@
-FROM debian:trixie AS build
+FROM ubuntu:20.04 AS build
 
 RUN apt update \
- && apt download libc-dev-bin libcrypt-dev linux-libc-dev rpcsvc-proto libc6-dev libc6 libxml2 \
+ && apt download libc-dev-bin libcrypt-dev linux-libc-dev libc6-dev libc6 libxml2 \
  && mkdir /sysroot \
  && ls *.deb | xargs -I{} dpkg-deb -x {} /sysroot \
  && ln -rs /sysroot/usr/lib /sysroot/lib \
