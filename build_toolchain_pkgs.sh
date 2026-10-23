@@ -22,7 +22,7 @@ SCRIPT_DIR="$(realpath "$(dirname "$0")")"; readonly SCRIPT_DIR
 function download_extract() (
   local os_arch="$1"
   local archive_name="LLVM-${LLVM_VERSION}-${os_arch}.tar"
-  gh release download --repo llvm/llvm-project --pattern "${archive_name}.zst*" --skip-existing >/dev/null || die "error downloading llvm tarball"
+  gh release download "llvmorg-${LLVM_VERSION}" --repo llvm/llvm-project --pattern "${archive_name}.zst*" --skip-existing >/dev/null || die "error downloading llvm tarball"
   gh attestation verify --repo llvm/llvm-project "${archive_name}.zst" -b "${archive_name}.zst.jsonl" >/dev/null || die "error verifying llvm tarball"
   if [[ ! -f "${archive_name}" ]]; then
     unzstd -T0 --long=30 "${archive_name}.zst" || die "error extracting llvm tarball"
