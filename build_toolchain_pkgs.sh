@@ -21,10 +21,12 @@ SCRIPT_DIR="$(realpath "$(dirname "$0")")"; readonly SCRIPT_DIR
 
 function download_extract() (
   local os_arch="$1"
-  /bin/wget -q "https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVM_VERSION}/LLVM-${LLVM_VERSION}-${os_arch}.tar.xz" || die "error downloading llvm tarball"
-  /bin/wget -q "https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVM_VERSION}/LLVM-${LLVM_VERSION}-${os_arch}.tar.xz.sig" || die "error downloading llvm tarball signature"
-  /bin/gpg -q --verify "LLVM-${LLVM_VERSION}-${os_arch}.tar.xz.sig" "LLVM-${LLVM_VERSION}-${os_arch}.tar.xz" || die "gpg verify failed"
-  /bin/unxz -T0 "LLVM-${LLVM_VERSION}-${os_arch}.tar.xz" || die "failed to extract llvm tarball"
+  local archive_name="LLVM-${LLVM_VERSION}-${os_arch}.tar"
+  gh release download --repo llvm/llvm-project --pattern "${archive_name}.zst*" --skip-existing >/dev/null || die "error downloading llvm tarball"
+  gh attestation verify --repo llvm/llvm-project "${archive_name}.zst" -b "${archive_name}.zst.jsonl" >/dev/null || die "error verifying llvm tarball"
+  if [[ ! -f "${archive_name}" ]]; then
+    unzstd -T0 --long=30 "${archive_name}.zst" || die "error extracting llvm tarball"
+  fi
 )
 
 function generate_manifest() (
@@ -73,7 +75,7 @@ function build_archive() (
   /bin/rm -r "${temp}"
 )
 
-mkdir srcs
+mkdir -p srcs
 pushd srcs || exit 1
 rm -f .err
 download_extract "Linux-X64" || die "download_extract failed (Linux-X64)" &
