@@ -37,6 +37,26 @@ while IFS=$'\n' read -r line; do
   includes+=("--include" "${prefix}/${line}")
 done <"${SCRIPT_DIR}/manifests/sysroot-macos.txt"
 ../../pkgutil_linux_amd64 "${includes[@]}" --strip-components 6 --expand-full ../../CLTools_macOSNMOS_SDK.pkg .
+rm usr/include/tcl.h \
+   usr/include/tclDecls.h \
+   usr/include/tclPlatDecls.h \
+   usr/include/tclTomMath.h \
+   usr/include/tclTomMathDecls.h \
+   usr/include/tk.h \
+   usr/include/tkDecls.h \
+   usr/include/tkIntXlibDecls.h \
+   usr/include/tkMacOSX.h \
+   usr/include/tkPlatDecls.h
+absolute="$(find . -type l -lname "/*")"
+if [[ ! -z "$absolute" ]]; then
+  echo "absolute symlinks need fixing: $absolute"
+  exit 1
+fi
+broken="$(find . -xtype l)"
+if [[ ! -z "$broken" ]]; then
+  echo "broken symlinks need fixing: $broken"
+  exit 1
+fi
 popd
 
 /bin/tar -cf "sysroot-macos-arm64.tar" -C out/ macos_arm64

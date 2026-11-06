@@ -1,4 +1,4 @@
-FROM ubuntu:20.04 AS build
+FROM debian:bookworm-backports AS build
 
 RUN apt update
 RUN mkdir -p /sysroot/usr/lib /sysroot/usr/lib64 /sysroot/usr/bin \
@@ -7,7 +7,7 @@ RUN mkdir -p /sysroot/usr/lib /sysroot/usr/lib64 /sysroot/usr/bin \
  && ln -rs /sysroot/usr/bin /sysroot/bin \
  && mkdir /staging \
  && cd /staging \
- && apt download libc-dev-bin libcrypt-dev libcrypt1 linux-libc-dev libc6-dev libc6 \
+ && apt download libc6-dev libc6 libc-dev-bin linux-libc-dev libcrypt-dev libcrypt1 rpcsvc-proto \
  && for f in $(find . -name '*.deb'); do dpkg-deb --fsys-tarfile $f > $f.tar; done \
  && for f in $(find . -name '*.tar'); do tar -x --keep-directory-symlink -C /sysroot -f $f; done \
  && rm -rf /sysroot/usr/share \
